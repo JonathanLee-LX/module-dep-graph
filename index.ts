@@ -1,23 +1,9 @@
-import {
-  init,
-  parse as _parse,
-  ImportSpecifier,
-  ExportSpecifier,
-} from "es-module-lexer";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-
-class Module {
-  public deps: Set<Module>;
-
-  constructor(
-    public imports: readonly ImportSpecifier[],
-    public exports: readonly ExportSpecifier[],
-    public path: string
-  ) {
-    this.deps = new Set();
-  }
-}
+import { createModule, Module } from "./Module";
+import { doParse } from "./parse";
+import { doTransform } from "./transform";
+import type { Module as SWCModule } from "@swc/core";
 
 function ensureExist(id: string) {
   const exist = existsSync(id);
@@ -38,11 +24,17 @@ export function doResolve(
 ): string {
   const { base, extensions, plugins } = config;
 
-  const isBare = isBareImport(id, config);
-  if (isBare) return "@fs/" + id;
+  let resolvedId: string | undefined | null;
 
-  // foo.svg?inline -> foo.svg
-  id = id.replace(/\?[a-zA-Z]+/, "");
+  // apply plugins resolve function.
+  // run plugin resolve function, and return when resovledId valid
+  for (let i = 0; i < plugins.length; i++) {
+    const plugin = plugins[i];
+    if (typeof plugin.resolve === "function") {
+      resolvedId = plugin.resolve(id as string, config);
+      if (resolvedId) return resolvedId;
+    }
+  }
 
   const matched = Object.entries(config.alias).find(
     ([k]) => k.split("/")[0] === k
@@ -52,16 +44,11 @@ export function doResolve(
     id = id.replace(matched[0], matched[1]);
   }
 
-  let resolvedId: string = id;
+  const isBare = isBareImport(id, config);
+  if (isBare) return "@fs/" + id;
 
-  //   apply plugins resolve function.
-  resolvedId = plugins
-    .map((plugin) => plugin.resolve)
-    .filter((resolve) => typeof resolve === "function")
-    .reduce((lastId: string, resolve) => {
-      const newId = resolve!(lastId, config);
-      return newId ? newId : lastId;
-    }, resolvedId);
+  // foo.svg?inline -> foo.svg
+  id = id.replace(/\?[a-zA-Z]+/, "");
 
   if (id.startsWith("/")) {
     // relative from __dirname
@@ -109,24 +96,33 @@ export function doResolve(
 
 export function doLoad(id: string, config: Config): string {
   const { plugins } = config;
-  const code = readFileSync(id, "utf-8");
-  return plugins
+
+  const code = plugins
     .map((plugin) => plugin.load)
     .filter((load) => typeof load === "function")
     .reduce((lastCode, load) => {
       const newCode = load!(id, lastCode, config);
       return newCode ? newCode : lastCode;
-    }, code);
+    }, "");
+
+  function fsLoad(id: string, lastCode: string) {
+    if (lastCode) return lastCode;
+    const code = readFileSync(id, "utf-8");
+    return code;
+  }
+
+  return fsLoad(id, code);
 }
 
 type ModuleMap = Map<string, Module>;
 
 interface UserPlugin {
+  parse?(id: string, code: string): SWCModule | null;
   resolve?(id: string, config: Config): string | null;
   load?(id: string, code: string, config: Config): string | null;
 }
 
-interface Config {
+export interface Config {
   base: string;
   alias: Record<string, string>;
   extensions: string[];
@@ -165,8 +161,6 @@ async function traverseCreateModule(
   moduleMap: ModuleMap,
   config: Config
 ) {
-  await init;
-
   const resolvedId = doResolve(id, config, importer);
 
   const existedMod = moduleMap.get(resolvedId);
@@ -176,23 +170,25 @@ async function traverseCreateModule(
   }
 
   const code = doLoad(resolvedId, config);
-  const mod = createModule(code, resolvedId);
-
-  if (importer) {
-    addDep(mod, importer);
-  }
+  const transformedCode = doTransform(code);
+  const ast = await doParse(resolvedId, transformedCode, config);
+  const mod = createModule(code, ast, resolvedId);
 
   moduleMap.set(resolvedId, mod);
 
-  for (let i = 0; i < mod.imports.length; i++) {
-    const importItem = mod.imports[i];
-    const importItemId = importItem.n;
-    if (!importItemId) continue;
-    traverseCreateModule(importItemId, mod, moduleMap, config);
+  if (mod && importer) {
+    addDep(mod, importer);
   }
-}
 
-function createModule(code: string, id: string): Module {
-  const [imports, exports] = _parse(code);
-  return new Module(imports, exports, id);
+  for (let i = 0; i < mod.ast.body.length; i++) {
+    const bodyItem = mod.ast.body[i];
+    if (
+      bodyItem.type === "ImportDeclaration" ||
+      bodyItem.type === "ExportNamedDeclaration"
+    ) {
+      const importItemId = bodyItem.source?.value;
+      if (!importItemId) continue;
+      await traverseCreateModule(importItemId, mod, moduleMap, config);
+    }
+  }
 }
