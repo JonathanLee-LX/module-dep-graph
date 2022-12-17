@@ -14,7 +14,6 @@ const config = defineConfig({
 it("createModuleGraph", async () => {
   const graph = await createModuleGraphFromEntry("./foo.ts", config);
   expect(graph.size).toBeGreaterThan(0);
-  expect(graph).toMatchSnapshot();
 });
 
 it("doResolve", async () => {
