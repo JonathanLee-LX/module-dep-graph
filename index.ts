@@ -19,7 +19,7 @@ class Module {
   }
 }
 
-function ensureExist(id) {
+function ensureExist(id: string) {
   const exist = existsSync(id);
   if (!exist) throw new Error("do not existed");
 }
@@ -167,13 +167,14 @@ async function traverseCreateModule(
 ) {
   await init;
 
-  const existedMod = moduleMap.get(id);
+  const resolvedId = doResolve(id, config, importer);
+
+  const existedMod = moduleMap.get(resolvedId);
   if (existedMod && importer) {
     addDep(existedMod, importer);
     return;
   }
 
-  const resolvedId = doResolve(id, config, importer);
   const code = doLoad(resolvedId, config);
   const mod = createModule(code, resolvedId);
 
