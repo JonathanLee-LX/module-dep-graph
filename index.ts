@@ -105,13 +105,16 @@ export function doLoad(id: string, config: Config): string {
       return newCode ? newCode : lastCode;
     }, "");
 
-  function fsLoad(id: string, lastCode: string) {
-    if (lastCode) return lastCode;
+  if (code) {
+    return code;
+  }
+
+  function loadByFS(id: string) {
     const code = readFileSync(id, "utf-8");
     return code;
   }
 
-  return fsLoad(id, code);
+  return loadByFS(id);
 }
 
 type ModuleMap = Map<string, Module>;

@@ -1,5 +1,5 @@
 import { Module, parseSync } from "@swc/core";
-import { parse as vueParse } from "@vue/compiler-sfc";
+import { compileScript, parse as vueParse } from "@vue/compiler-sfc";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -119,87 +119,72 @@ it("loop import", async () => {
   expect(bar?.deps.has(foo!)).toBe(true);
 });
 
-it("simple vue project", async () => {
-  // add vue plugin
-  baseConfig.plugins.push({
-    parse(id, code): Module | null {
-      if (!id.endsWith(".vue")) return null;
-
-      const {
-        descriptor: { script, scriptSetup, styles, template },
-        errors,
-      } = vueParse(code);
-
-      let ast: Module | null = null;
-
-      if (script?.content) {
-        ast = parseSync(script?.content);
-      }
-
-      if (scriptSetup?.content) {
-        const scriptSetupAST = parseSync(scriptSetup.content);
-
-        if (ast && ast.body) {
-          ast.body.push(...scriptSetupAST.body);
-        } else {
-          ast = scriptSetupAST;
-        }
-      }
-
-      if (ast === null) {
-        //  for only template code vue component
-        ast = parseSync("export default {}");
-      }
-
-      return ast;
-    },
-  });
-
-  moduleMap = {
-    ["App.vue"]: {
-      source: `
+const VUE_PROJECT = {
+  ["App.vue"]: {
+    source: `
         <template>
           <Helloworld></Helloworld>
           <span>{{count}}</span>
         </template>
         <script>
-          import { ref } from 'vue'
-          import Helloworld from 'Helloworld.vue'
-
           export default {
             name: 'App',
-            setup() {
-              const count = ref(0)
-            }
           }
         </script>
+        <script setup>
+          import { ref } from 'vue'
+          import Helloworld from 'Helloworld.vue'
+          const count = ref(0)
+        </script>
       `,
-    },
-    ["main.js"]: {
-      source: `
+  },
+  ["main.js"]: {
+    source: `
         import App from 'App.vue'
         import { createApp } from 'vue'
 
         createApp(App).mount('#app')
         console.log(router)
       `,
-    },
-    ["Helloworld.vue"]: {
-      source: `
+  },
+  ["Helloworld.vue"]: {
+    source: `
         <template>
           <span>hello-world</span>
         </template>
-        <script>
-          import { ref } from 'vue'
-        </script>
       `,
-    },
-    ["vue"]: {
-      source: `
+  },
+  ["vue"]: {
+    source: `
         export function createApp() {}
       `,
+  },
+};
+
+it("simple vue project", async () => {
+  // add vue plugin
+  baseConfig.plugins.push({
+    parse(id, code): Module | null {
+      if (!id.endsWith(".vue")) return null;
+
+      const { descriptor, errors } = vueParse(code);
+
+      // print error if has
+      errors.forEach((error) => console.error(error.message));
+
+      // for <script> tag not exist.
+      if (!descriptor.script && !descriptor.scriptSetup) {
+        return parseSync("export default {}");
+      }
+
+      const { content } = compileScript(descriptor, {
+        id: Math.random().toString(),
+      });
+      return parseSync(content);
     },
-  };
+  });
+
+  moduleMap = VUE_PROJECT;
 
   const graph = await createModuleGraphFromEntry("main.js", baseConfig);
 
@@ -215,6 +200,7 @@ it("simple vue project", async () => {
   expect(helloworld?.deps.has(app!)).toBe(true);
   expect(vue?.deps.has(main!)).toBe(true);
   expect(vue?.deps.has(app!)).toBe(true);
+  expect(vue?.deps.has(helloworld!)).toBe(false);
 
   const notExist = graph.get("not-exist");
   expect(notExist).toBeUndefined();
