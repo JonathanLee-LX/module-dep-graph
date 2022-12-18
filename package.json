@@ -2,10 +2,11 @@
   "name": "module-map",
   "version": "0.0.1",
   "description": "scan project depencies relationship.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watchAll"
+    "test:watch": "jest --watchAll",
+    "build": "tsc"
   },
   "keywords": [
     "module",
