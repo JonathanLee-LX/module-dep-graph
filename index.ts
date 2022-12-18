@@ -6,11 +6,16 @@ import { doLoad } from "./load";
 import { addDep } from "./helpers";
 import { Config } from "./config";
 
+export { defineConfig } from "./config";
+export type { Config } from "./config";
+
 export async function createModuleGraphFromEntry(id: string, config: Config) {
   const moduleMap: ModuleMap = new Map<string, Module>();
   await traverseCreateModule(id, null, moduleMap, config);
   return moduleMap;
 }
+
+export const create = createModuleGraphFromEntry;
 
 async function traverseCreateModule(
   id: string,
