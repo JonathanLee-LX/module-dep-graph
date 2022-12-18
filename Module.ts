@@ -11,3 +11,5 @@ export class Module {
 export function createModule(code: string, ast: AST, id: string): Module {
   return new Module(id, code, ast);
 }
+
+export type ModuleMap = Map<string, Module>;

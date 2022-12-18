@@ -1,5 +1,5 @@
 import { Module, parseSync } from "@swc/core";
-import { Config } from ".";
+import { Config } from "./config";
 
 export async function doParse(
   id: string,
