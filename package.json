@@ -1,5 +1,5 @@
 {
-  "name": "module-map",
+  "name": "@jonathanleelx/module-dep-graph",
   "version": "0.0.1",
   "description": "scan project depencies relationship.",
   "main": "lib/index.js",
