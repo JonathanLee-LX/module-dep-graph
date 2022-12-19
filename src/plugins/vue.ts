@@ -5,7 +5,7 @@ import { UserPlugin } from "../config";
 export function createVuePlugin(): UserPlugin {
   return {
     name: "vue",
-    parse(id, code): Module | null {
+    parse(id: string, code: string): Module | null {
       if (!id.endsWith(".vue")) return null;
 
       const { descriptor, errors } = vueParse(code);
@@ -19,7 +19,7 @@ export function createVuePlugin(): UserPlugin {
       }
 
       const { content } = compileScript(descriptor, {
-        id: Math.random().toString(),
+        id: id,
       });
       return parseSync(content);
     },

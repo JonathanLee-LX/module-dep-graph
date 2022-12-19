@@ -39,10 +39,14 @@ export function createFsPlugin(options: FsPluginOptions): UserPlugin {
   return {
     name: "fs",
     load(id: string) {
+      if (id.startsWith("@fs")) return null;
       const code = readFileSync(id, "utf-8");
       return code;
     },
     resolve(id: string, config: Config, importer: Module | null) {
+      const isBare = isBareImport(id);
+      if (isBare) return "@fs/" + id;
+
       let resolvedId: string;
 
       const matched = Object.entries(alias).find(
@@ -52,9 +56,6 @@ export function createFsPlugin(options: FsPluginOptions): UserPlugin {
       if (matched) {
         id = id.replace(matched[0], matched[1]);
       }
-
-      const isBare = isBareImport(id);
-      if (isBare) return "@fs/" + id;
 
       // foo.svg?inline -> foo.svg
       id = id.replace(/\?[a-zA-Z]+/, "");

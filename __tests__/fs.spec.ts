@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createModuleGraphFromEntry } from "..";
-import { defineConfig } from "../config";
-import { doLoad } from "../load";
-import { createFsPlugin } from "../plugins/fs";
-import { doResolve } from "../resolve";
+import { defineConfig } from "../src/config";
+import { doLoad } from "../src/load";
+import { createFsPlugin } from "../src/plugins/fs";
+import { doResolve } from "../src/resolve";
 
 describe("create by fs", () => {
   const config = defineConfig({

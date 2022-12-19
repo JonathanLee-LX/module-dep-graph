@@ -9,6 +9,8 @@ import { Config } from "./config";
 export { defineConfig } from "./config";
 export type { Config } from "./config";
 
+export type { Module, ModuleMap } from "./Module";
+
 export async function createModuleGraphFromEntry(id: string, config: Config) {
   const moduleMap: ModuleMap = new Map<string, Module>();
   await traverseCreateModule(id, null, moduleMap, config);
@@ -24,6 +26,9 @@ async function traverseCreateModule(
   config: Config
 ) {
   const resolvedId = doResolve(id, config, importer) as string;
+  if (!resolvedId) {
+    return;
+  }
 
   const existedMod = moduleMap.get(resolvedId);
   if (existedMod && importer) {
@@ -31,9 +36,27 @@ async function traverseCreateModule(
     return;
   }
 
-  const code = doLoad(resolvedId, config) as string;
+  let code: string | null | undefined = null;
+  try {
+    code = doLoad(resolvedId, config);
+  } catch (error) {
+    // log error
+    // console.error(error);
+  }
+
+  if (!code) {
+    return;
+  }
+
   const transformedCode = doTransform(code);
-  const ast = await doParse(resolvedId, transformedCode, config);
+  let ast: any;
+  try {
+    ast = await doParse(resolvedId, transformedCode, config);
+    if (!ast) return;
+  } catch (error) {
+    debugger;
+  }
+
   const mod = createModule(code, ast, resolvedId);
 
   moduleMap.set(resolvedId, mod);

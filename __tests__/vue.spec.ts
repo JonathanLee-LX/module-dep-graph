@@ -1,7 +1,10 @@
 import { createModuleGraphFromEntry } from "..";
-import { defineConfig, Config } from "../config";
-import { VirtualFileTree, createVirtualFsPlugin } from "../plugins/virtualFs";
-import { createVuePlugin } from "../plugins/vue";
+import { defineConfig, Config } from "../src/config";
+import {
+  VirtualFileTree,
+  createVirtualFsPlugin,
+} from "../src/plugins/virtualFs";
+import { createVuePlugin } from "../src/plugins/vue";
 
 describe("vue project", () => {
   let baseConfig: Config;

@@ -1,6 +1,6 @@
 import { Config } from "./config";
 
-export function doLoad(id: string, config: Config): string | undefined {
+export function doLoad(id: string, config: Config): string | undefined | null {
   const { plugins } = config;
   let code: string | null = null;
 

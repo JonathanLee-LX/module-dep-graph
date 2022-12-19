@@ -1,6 +1,9 @@
 import { createModuleGraphFromEntry } from "..";
-import { defineConfig, Config } from "../config";
-import { VirtualFileTree, createVirtualFsPlugin } from "../plugins/virtualFs";
+import { defineConfig, Config } from "../src/config";
+import {
+  VirtualFileTree,
+  createVirtualFsPlugin,
+} from "../src/plugins/virtualFs";
 
 describe("create by virtual fs", () => {
   let baseConfig: Config;

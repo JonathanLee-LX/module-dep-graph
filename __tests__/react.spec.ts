@@ -1,7 +1,10 @@
-import { createModuleGraphFromEntry } from "..";
-import { Config, defineConfig } from "../config";
-import { createReactPlugin } from "../plugins/react";
-import { VirtualFileTree, createVirtualFsPlugin } from "../plugins/virtualFs";
+import { createModuleGraphFromEntry } from "../src";
+import { Config, defineConfig } from "../src/config";
+import { createReactPlugin } from "../src/plugins/react";
+import {
+  VirtualFileTree,
+  createVirtualFsPlugin,
+} from "../src/plugins/virtualFs";
 
 describe("simple react app", () => {
   let baseConfig: Config;
