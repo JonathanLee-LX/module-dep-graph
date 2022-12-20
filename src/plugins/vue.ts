@@ -18,10 +18,21 @@ export function createVuePlugin(): UserPlugin {
         return parseSync("export default {}");
       }
 
-      const { content } = compileScript(descriptor, {
+      const { content, lang } = compileScript(descriptor, {
         id: id,
       });
-      return parseSync(content);
+      try {
+        const isTSX = /\.tsx$/.test(id);
+        return parseSync(content, {
+          syntax: lang === "ts" ? "typescript" : "ecmascript",
+          tsx: isTSX,
+          jsx: /\.jsx$/.test(id),
+        });
+      } catch (error) {
+        console.error(error);
+        console.log(lang);
+        return null;
+      }
     },
   };
 }

@@ -16,7 +16,7 @@ const defaultParse: UserPlugin["parse"] = (
     ast =
       ast === null
         ? parseSync(code, {
-            syntax: isTS ? "typescript" : "ecmascript",
+            syntax: isTS || isTSX ? "typescript" : "ecmascript",
             decorators: true,
             dynamicImport: true,
             tsx: isTSX,
@@ -25,6 +25,7 @@ const defaultParse: UserPlugin["parse"] = (
         : ast;
     return ast;
   } catch (error) {
+    console.error(error);
     console.error("parse id " + id + " failed");
     // throw error;
     return null;
@@ -48,8 +49,6 @@ export async function doParse(
           return ast;
         }
       } catch (error) {
-        console.error("parse id " + id + " failed");
-        // throw error;
         return null;
       }
     }
