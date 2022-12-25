@@ -44,15 +44,15 @@ export async function doParse(
     if (typeof plugin.parse === "function") {
       try {
         ast = plugin.parse(id, code);
-        if (ast) {
-          // break;
-          return ast;
-        }
+        if (ast) break;
       } catch (error) {
-        return null;
+        // log error
+        console.error(error);
       }
     }
   }
+
+  if (ast) return ast;
 
   return defaultParse!(id, code);
 }

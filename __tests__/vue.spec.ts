@@ -27,7 +27,7 @@ describe("vue project", () => {
           }
         </script>
         <script setup>
-          import { ref } from 'vue'
+          import { ref } from 'vue.js'
           import Helloworld from 'Helloworld.vue'
           const count = ref(0)
         </script>
@@ -36,7 +36,7 @@ describe("vue project", () => {
       ["main.js"]: {
         source: `
         import App from 'App.vue'
-        import { createApp } from 'vue'
+        import { createApp } from 'vue.js'
 
         createApp(App).mount('#app')
         console.log(router)
@@ -49,7 +49,7 @@ describe("vue project", () => {
         </template>
       `,
       },
-      ["vue"]: {
+      ["vue.js"]: {
         source: `
         export function createApp() {}
       `,
@@ -68,7 +68,7 @@ describe("vue project", () => {
     const main = graph.get("main.js");
     const app = graph.get("App.vue");
     const helloworld = graph.get("Helloworld.vue");
-    const vue = graph.get("vue");
+    const vue = graph.get("vue.js");
 
     expect(main?.deps.size).toBe(0);
     expect(app?.deps.has(main!)).toBe(true);

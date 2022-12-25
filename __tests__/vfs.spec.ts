@@ -14,22 +14,22 @@ describe("create by virtual fs", () => {
 
   it("simple js", async () => {
     const vFileTree: VirtualFileTree = {
-      foo: {
+      ["foo.js"]: {
         source: `
-      import bar from 'bar'
-      import { baz } from 'baz'
+      import bar from 'bar.js'
+      import { baz } from 'baz.js'
       console.log("bar: " + bar)
       console.log("baz: " + baz)
     `,
       },
-      bar: {
+      ["bar.js"]: {
         source: `
       export const bar = 'bar'
     `,
       },
-      baz: {
+      ["baz.js"]: {
         source: `
-      import bar from 'bar'
+      import bar from 'bar.js'
       export function baz() {
       }
     `,
@@ -38,11 +38,11 @@ describe("create by virtual fs", () => {
 
     baseConfig.plugins.push(createVirtualFsPlugin(vFileTree));
 
-    const graph = await createModuleGraphFromEntry("foo", baseConfig);
+    const graph = await createModuleGraphFromEntry("foo.js", baseConfig);
 
-    const fooMod = graph.get("foo");
-    const barMod = graph.get("bar");
-    const bazMod = graph.get("baz");
+    const fooMod = graph.get("foo.js");
+    const barMod = graph.get("bar.js");
+    const bazMod = graph.get("baz.js");
     expect(fooMod?.deps.size).toBe(0);
     expect(barMod?.deps.size).toBe(2);
     expect(barMod?.deps.has(fooMod!)).toBe(true);
@@ -51,15 +51,15 @@ describe("create by virtual fs", () => {
 
   it("loop import", async () => {
     const vFileTree: VirtualFileTree = {
-      foo: {
+      ["foo.js"]: {
         source: `
-        import { bar } from 'bar'
+        import { bar } from 'bar.js'
         export const foo = 'foo'
       `,
       },
-      bar: {
+      ["bar.js"]: {
         source: `
-        import { foo } from 'foo'
+        import { foo } from 'foo.js'
         export const bar = 'bar'
       `,
       },
@@ -67,10 +67,10 @@ describe("create by virtual fs", () => {
 
     baseConfig.plugins.push(createVirtualFsPlugin(vFileTree));
 
-    const graph = await createModuleGraphFromEntry("foo", baseConfig);
+    const graph = await createModuleGraphFromEntry("foo.js", baseConfig);
 
-    const foo = graph.get("foo");
-    const bar = graph.get("bar");
+    const foo = graph.get("foo.js");
+    const bar = graph.get("bar.js");
 
     expect(foo?.deps.has(bar!)).toBe(true);
     expect(bar?.deps.has(foo!)).toBe(true);
